@@ -455,18 +455,11 @@ class Gradient {
         }
     }
 
-    updateSectionColorsSmoothly(newColors) {
-        const duration = 5000; // Duration of the transition in milliseconds
+    updateSectionColorsSmoothly(targetColors) {
+        const duration = 4000; // Duration of the transition in milliseconds
         const startTime = Date.now();
         console.log("section colors", this.sectionColors)
         const oldColors = this.sectionColors
-        // const targetColors = newColors.map(hexToRgb);
-        const targetColors = [
-            [1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1],
-            [1, 1, 0]
-        ]
         console.log(targetColors)
 
         const animate = () => {
@@ -491,12 +484,12 @@ class Gradient {
             // Assuming you have a method like this to apply the updated colors
 
             if (t < 1) { // Continue the animation until t reaches 1
-                this.applyUpdatedColors();
                 requestAnimationFrame(animate);
+                this.applyUpdatedColors();
             } else {
                 // Ensure the colors match exactly at the end of the animation
-                // this.sectionColors = targetColors;
-                // this.applyUpdatedColors();
+                this.sectionColors = targetColors;
+                this.applyUpdatedColors();
             }
         };
 

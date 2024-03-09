@@ -8,49 +8,35 @@ import { ProsodyWidgets } from '@/app/widgets/ProsodyWidgets';
 
 
 
-
 export default function Home() {
 
-    const gradientRef = useRef<any>(new Gradient(["#FF0000", "#D35400", "#992D22", "#7F8C8D"]));
-
-    const emotions1 = [
-        { name: 'Anger', score: 95, color: '#FF0000' }, // Example color in hex
-        { name: 'Frustration', score: 90, color: '#FF0000' },
-        { name: 'Irritation', score: 85, color: '#D35400' },
-        { name: 'Rage', score: 100, color: '#992D22' },
-        { name: 'Disgust', score: 80, color: '#7F8C8D' },
-        { name: 'Envy', score: 75, color: '#27AE60' }
-    ];
-
-    const emotions2 = [
-        { name: 'Anger', score: 95, color: '#FF0000' }, // Example color in hex
-        { name: 'Frustration', score: 90, color: '#FF0000' },
-        { name: 'Irritation', score: 85, color: '#D35400' },
-        { name: 'Rage', score: 100, color: '#992D22' },
-        { name: 'Disgust', score: 80, color: '#7F8C8D' },
-        { name: 'Envy', score: 75, color: '#27AE60' }
-    ];
+    const gradientRef = useRef<any>(new Gradient([[255, 0, 0], [211, 84, 0], [153, 45, 34], [127, 140, 141]]));
 
     useEffect(() => {
         const canvasElement = document.querySelector("#gradient-canvas") as HTMLCanvasElement;
         if (canvasElement) {
-            gradientRef.current.initGradient("#gradient-canvas", ["#FF0000", "#D35400", "#992D22", "#7F8C8D"]);
-            // gradientRef.current.updateSectionColorsSmoothly(["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"])
+            gradientRef.current.initGradient("#gradient-canvas", [[255, 0, 0], [211, 84, 0], [153, 45, 34], [127, 140, 141]]);
         }
+
+        const updateColors = () => {
+            // Generate four new random colors
+            const newColors = Array.from({ length: 4 }, () => [
+                Math.random(), // R
+                Math.random(), // G
+                Math.random(),  // B
+            ]);
+
+            gradientRef.current.updateSectionColorsSmoothly(newColors);
+        };
+
+        const intervalId = setInterval(updateColors, 4000); // Update colors every 10 seconds
+
+        return () => clearInterval(intervalId); // Cleanup on component unmount
     }, []);
-
-
-
 
     return (
         <main className="">
-            <button onClick={() => gradientRef.current.updateSectionColorsSmoothly([
-                [1, 0, 0],
-                [0, 1, 0],
-                [0, 0, 1],
-                [1, 1, 0]])}>Update</button>
-            <canvas id="gradient-canvas" onLoad={() => gradientRef.current.updateSectionColorsSmoothly(["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"])} />
-            <button onClick={() => gradientRef.current.updateSectionColors(["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"])}>Update</button>
+            <canvas id="gradient-canvas" />
         </main>
     )
 }
