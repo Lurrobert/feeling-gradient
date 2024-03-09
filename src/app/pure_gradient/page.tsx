@@ -43,6 +43,7 @@ export default function Home() {
 
     return (
         <main className="">
+            <button onClick={() => gradientRef.current.updateSectionColorsSmoothly(["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"])}>Update</button>
             <canvas id="gradient-canvas" data-transition-in />
             <button onClick={() => gradientRef.current.updateSectionColors(["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"])}>Update</button>
         </main>
