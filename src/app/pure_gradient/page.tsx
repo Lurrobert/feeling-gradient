@@ -36,7 +36,7 @@ export default function Home() {
 
     return (
         <main className="">
-            <canvas id="gradient-canvas" />
+            {/* <canvas id="gradient-canvas" /> */}
         </main>
     )
 }

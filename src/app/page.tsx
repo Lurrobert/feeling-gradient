@@ -7,7 +7,14 @@ import { ProsodyWidgets } from './widgets/ProsodyWidgets';
 // import AudioWidgets from './widgets/AudioWidgets'; // Assuming you export it correctly
 import { AudioWidgets } from './widgets/AudioWidgets';
 import { AudioPrediction } from './lib/data/audioPrediction';
+import { RetellClient } from "retell-sdk";
+import { RetellWebClient } from "retell-client-js-sdk";
 
+const retell = new RetellClient({
+    apiKey: "aef5783c-6d8f-4d5a-bf2f-d2122f313bd7",
+});
+
+const sdk = new RetellWebClient()
 
 const emotionColors = {
     Admiration: [0.85, 0.75, 0.4], // Warm yellow
@@ -86,16 +93,8 @@ export default function Home() {
                 .sort((a, b) => b.score - a.score)
                 .slice(0, 4);
             topEmotions.forEach(emotion => {
-                // console.log(`Top Emotion: ${emotion.name} with score: ${emotion.score}`);
-                // emotion colors
-                const color = emotionColors[emotion.name];
-                console.log(color);
-                // gradientRef.current.updateSectionColorsSmoothly(newColors);
-                // gradientRef.current.updateSectionColorsSmoothly(color);
-                // i need 4 top colors
                 const top_4_colors = topEmotions.map(emotion => emotionColors[emotion.name]);
-                console.log("Colors")
-                console.log(top_4_colors);
+                console.log(predictions[0].emotions)
                 gradientRef.current.updateSectionColorsSmoothly(top_4_colors);
             });
         }
@@ -103,12 +102,66 @@ export default function Home() {
 
     }, [predictions]);
 
+    sdk.on("conversationStarted", () => {
+        console.log("Conversation started");
+    });
+
+    // When the whole agent and user conversation ends
+    sdk.on("conversationEnded", () => {
+        console.log("Conversation ended");
+    });
+
+    sdk.on("error", (error) => {
+        console.error("An error occurred:", error);
+    });
+
+    // Update message such as transcript
+    sdk.on("update", (update) => {
+        // Print live transcript as needed
+        console.log("update", update);
+        // sdk.me
+    });
+
+    // When the client receives the audio from server to play
+    sdk.on("audio", (audio: Uint8Array) => {
+        console.log("There is audio");
+        if (predictions[0]) {
+            const emotionsString = predictions[0].emotions.map(emotion => `${emotion.name}: ${emotion.score}`).join(", ");
+            fetch(`http://0.0.0.0:8080/current-user-emotions/${encodeURIComponent(emotionsString)}`)
+                .then(response => response.json())
+                .then(data => console.log(data))
+                .catch(error => console.error("Error sending emotions:", error));
+        }
+
+    });
+
+
+    useEffect(() => {
+        const registerAudio = async () => {
+            const registerCallResponse = await retell.registerCall({
+                agentId: 'a8b62e62e844f5d80c05ba71f9763573',
+                audioWebsocketProtocol: 'web',
+                audioEncoding: 's16le',
+                sampleRate: 24000,
+            });
+            console.log(registerCallResponse); // Assuming you want to log the response for now
+            sdk.startConversation({
+                callId: registerCallResponse.callDetail?.callId ?? '',
+                sampleRate: 24000,
+                // enableUpdate: true
+            })
+
+            // res.callDetail?.callId
+        };
+        registerAudio();
+    }, []);
+
     // Now you can use predictions directly in Home, for example, to display them
     return (
         <main className="">
-            <div>
+            <div style={{ position: "absolute", top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'none' }}>
                 {predictions.slice(0, 1).map((prediction) => (
-                    <div key={prediction.time.begin}>
+                    <div key={prediction.time.begin} style={{ position: 'relative', margin: '20px', backgroundColor: 'rgba(255, 255, 255, 0.5)', padding: '10px', borderRadius: '10px' }}>
                         <div>Time: {prediction.time.begin} - {prediction.time.end}</div>
                         <ul>
                             {prediction.emotions.sort((a, b) => b.score - a.score).slice(0, 4).map((emotion, index) => (
@@ -117,9 +170,11 @@ export default function Home() {
                         </ul>
                     </div>
                 ))}
+            </div>
+            <div>
                 <canvas id="gradient-canvas" />
             </div>
-            <AudioWidgets predictions={predictions} setPredictions={setPredictions} modelName="prosody" recordingLengthMs={200} streamWindowLengthMs={10000} />
-        </main>
+            <AudioWidgets predictions={predictions} setPredictions={setPredictions} modelName="prosody" recordingLengthMs={400} streamWindowLengthMs={10000} />
+        </main >
     )
 }

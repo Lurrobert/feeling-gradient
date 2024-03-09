@@ -19,6 +19,8 @@
     "react": "^18",
     "react-dom": "^18",
     "react-use": "^17.4.0",
+    "retell-client-js-sdk": "^1.3.0",
+    "retell-sdk": "^2.3.7",
     "tailwind-merge": "^1.12.0",
     "typescript": "4.8.4"
   },

@@ -456,7 +456,7 @@ class Gradient {
     }
 
     updateSectionColorsSmoothly(targetColors) {
-        const duration = 1000; // Duration of the transition in milliseconds
+        const duration = 1500; // Duration of the transition in milliseconds
         const startTime = Date.now();
         console.log("section colors", this.sectionColors)
         const oldColors = this.sectionColors
@@ -479,7 +479,7 @@ class Gradient {
 
             this.sectionColors = interpolatedColors;
 
-            console.log(this.sectionColors);
+            // console.log(this.sectionColors);
 
             // Assuming you have a method like this to apply the updated colors
 
