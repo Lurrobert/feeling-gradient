@@ -15,9 +15,11 @@ interface AudioWidgetsProps {
   recordingLengthMs: number;
   streamWindowLengthMs: number;
   onTimeline: Optional<(predictions: AudioPrediction[]) => void>;
+  predictions: AudioPrediction[];
+  setPredictions: React.Dispatch<React.SetStateAction<AudioPrediction[]>>;
 }
 
-export function AudioWidgets({ modelName, recordingLengthMs, streamWindowLengthMs, onTimeline }: AudioWidgetsProps) {
+export function AudioWidgets({ modelName, recordingLengthMs, streamWindowLengthMs, onTimeline, predictions, setPredictions }: AudioWidgetsProps) {
   // const authContext = useContext(AuthContext);
   const socketRef = useRef<WebSocket | null>(null);
   const recorderRef = useRef<AudioRecorder | null>(null);
@@ -25,7 +27,6 @@ export function AudioWidgets({ modelName, recordingLengthMs, streamWindowLengthM
   const mountRef = useRef(true);
   const numReconnects = useRef(0);
   const serverReadyRef = useRef(true);
-  const [predictions, setPredictions] = useState<AudioPrediction[]>([]);
   const [status, setStatus] = useState("");
   const maxReconnects = 3;
 
@@ -185,7 +186,7 @@ export function AudioWidgets({ modelName, recordingLengthMs, streamWindowLengthM
 
   return (
     <div>
-      <div className="md:flex">
+      {/* <div className="md:flex">
         {!onTimeline && <TopEmotions emotions={emotions} />}
         {onTimeline && (
           <div className="ml-10">
@@ -194,7 +195,7 @@ export function AudioWidgets({ modelName, recordingLengthMs, streamWindowLengthM
         )}
       </div>
 
-      <div>{status}</div>
+      <div>{status}</div> */}
     </div>
   );
 }
