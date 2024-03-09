@@ -2,6 +2,9 @@
 import React, { useEffect, useRef } from 'react';
 import Image from "next/image";
 import { Gradient } from './gradient';
+// import { ProsodyWidgets } from "../../components/widgets/ProsodyWidgets";
+import { ProsodyWidgets } from './widgets/ProsodyWidgets';
+
 
 
 export default function Home() {
@@ -21,7 +24,8 @@ export default function Home() {
 
   return (
     <main className="">
-      <canvas id="gradient-canvas" data-transition-in />
+      {/* <canvas id="gradient-canvas" data-transition-in /> */}
+      <ProsodyWidgets />
     </main>
   )
 }

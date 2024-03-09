@@ -18,6 +18,17 @@ function normalizeColor(hexCode) {
 //Essential functionality of WebGl
 //t = width
 //n = height
+
+
+// function normalizeColor(hexCode) {
+//     // Remove '0x' prefix if present
+//     if (hexCode.startsWith('0x')) {
+//         hexCode = hexCode.substring(2);
+//     }
+//     const hex = parseInt(hexCode, 16);
+//     return [(hex >> 16 & 255) / 255, (hex >> 8 & 255) / 255, (255 & hex) / 255];
+// }
+
 class MiniGl {
     constructor(canvas, width, height, debug = false) {
         const _miniGl = this,
@@ -25,7 +36,10 @@ class MiniGl {
         _miniGl.canvas = canvas, _miniGl.gl = _miniGl.canvas.getContext("webgl", {
             antialias: true
         }), _miniGl.meshes = [];
+        _miniGl.gl = _miniGl.canvas.getContext("webgl", { antialias: true });
+        console.log("MINIG GL", _miniGl.gl); // Check if this is null/undefined or a valid WebGL context
         const context = _miniGl.gl;
+
         width && height && this.setSize(width, height), _miniGl.lastDebugMsg, _miniGl.debug = debug && debug_output ? function (e) {
             const t = new Date;
             t - _miniGl.lastDebugMsg > 1e3 && console.log("---"), console.log(t.toLocaleTimeString() + Array(Math.max(0, 32 - e.length)).join(" ") + e + ": ", ...Array.from(arguments).slice(1)), _miniGl.lastDebugMsg = t
@@ -321,12 +335,101 @@ class Gradient {
             this.conf.playing = false
         }), e(this, "play", () => {
             requestAnimationFrame(this.animate), this.conf.playing = true
-        }), e(this, "initGradient", (selector) => {
+        }), e(this, "initGradient", (selector, colors) => {
             this.el = document.querySelector(selector);
+
+            // waitForCssVars() {
+            //     if (this.computedCanvasStyle && -1 !== this.computedCanvasStyle.getPropertyValue("--gradient-color-1").indexOf("#")) this.init(), this.addIsLoadedClass();
+            //     else {
+            //         if (this.cssVarRetries += 1, this.cssVarRetries > this.maxCssVarRetries) {
+            //             return this.sectionColors = [16711680, 16711680, 16711935, 65280, 255], void this.init();
+            //         }
+            //         requestAnimationFrame(() => this.waitForCssVars())
+            //     }
+            // }
+            /*
+            * Initializes the four section colors by retrieving them from css variables.
+            */
+
+            this.sectionColors = colors;
             this.connect();
             return this;
         })
+        this.initEmotionColorsAndAnimation = function (emotions) {
+            console.log(this.activeColors)
+
+        };
+
+        this.updateAnimationSpeedAndIntensity = function (score) {
+            this.amp = score * 3;
+            this.freqX = score * 0.0001;
+            this.freqY = score * 0.0002;
+            if (this.material) {
+                this.material.uniforms.u_vertDeform.noiseAmp.value = this.amp;
+                this.material.uniforms.u_global.noiseFreq.value = [this.freqX, this.freqY];
+            }
+        };
     }
+    updateSectionColors(colors) {
+        this.sectionColors = colors.map(color => {
+            // Assuming color is in hex format, e.g., #RRGGBB
+            if (color.length === 4) {
+                // Convert shorthand hex color to full length
+                const hexTemp = color.substr(1).split("").map(hexTemp => hexTemp + hexTemp).join("");
+                color = `#${hexTemp}`;
+            }
+            return color;
+        });
+
+        // Convert hex colors to RGB format and normalize to [0, 1] range
+        const normalizedColors = this.sectionColors.map(hex => {
+            const r = parseInt(hex.slice(1, 3), 16) / 255;
+            const g = parseInt(hex.slice(3, 5), 16) / 255;
+            const b = parseInt(hex.slice(5, 7), 16) / 255;
+            return [r, g, b];
+        });
+
+        this.sectionColors = normalizedColors
+
+        // this.sectionColors = newColors.map(color => normalizeColor(color));
+
+        // Now, update the uniforms in your material with these new colors
+        if (this.material && this.material.uniforms && this.material.uniforms.u_waveLayers) {
+            // Assuming you have a way to update colors directly...
+            this.material.uniforms.u_waveLayers.value.forEach((layerUniform, index) => {
+                if (index < this.sectionColors.length) {
+                    // Update the uniform with the new color
+                    // Note: You may need to ensure this aligns with how your shader expects color data
+                    layerUniform.value.color.value = this.sectionColors[index];
+                }
+            });
+
+            // Trigger a re-render to reflect the updated colors
+            this.minigl.render();
+        }
+
+        // Assuming the shader uses a uniform array for colors, update it here
+        if (this.material && this.material.uniforms && this.material.uniforms.u_waveLayers) {
+            this.material.uniforms.u_waveLayers.value.forEach((layerUniform, index) => {
+                if (index < normalizedColors.length) {
+                    console.log("Updagin")
+                    // Update the uniform with the normalized RGB values
+                    // Note: Ensure that the shader and WebGL setup supports this operation
+                    this.minigl.gl.uniform3fv(layerUniform.location, new Float32Array(normalizedColors[index]));
+                }
+            });
+
+            // Trigger a re-render if necessary
+            if (this.minigl) {
+                console.log('re')
+                this.minigl.render();
+                console.log(this.sectionColors)
+            }
+            this.minigl.render();
+        }
+    }
+
+
     async connect() {
         this.shaderFiles = {
             vertex: "varying vec3 v_color;\n\nvoid main() {\n  float time = u_time * u_global.noiseSpeed;\n\n  vec2 noiseCoord = resolution * uvNorm * u_global.noiseFreq;\n\n  vec2 st = 1. - uvNorm.xy;\n\n  //\n  // Tilting the plane\n  //\n\n  // Front-to-back tilt\n  float tilt = resolution.y / 2.0 * uvNorm.y;\n\n  // Left-to-right angle\n  float incline = resolution.x * uvNorm.x / 2.0 * u_vertDeform.incline;\n\n  // Up-down shift to offset incline\n  float offset = resolution.x / 2.0 * u_vertDeform.incline * mix(u_vertDeform.offsetBottom, u_vertDeform.offsetTop, uv.y);\n\n  //\n  // Vertex noise\n  //\n\n  float noise = snoise(vec3(\n    noiseCoord.x * u_vertDeform.noiseFreq.x + time * u_vertDeform.noiseFlow,\n    noiseCoord.y * u_vertDeform.noiseFreq.y,\n    time * u_vertDeform.noiseSpeed + u_vertDeform.noiseSeed\n  )) * u_vertDeform.noiseAmp;\n\n  // Fade noise to zero at edges\n  noise *= 1.0 - pow(abs(uvNorm.y), 2.0);\n\n  // Clamp to 0\n  noise = max(0.0, noise);\n\n  vec3 pos = vec3(\n    position.x,\n    position.y + tilt + incline + noise - offset,\n    position.z\n  );\n\n  //\n  // Vertex color, to be passed to fragment shader\n  //\n\n  if (u_active_colors[0] == 1.) {\n    v_color = u_baseColor;\n  }\n\n  for (int i = 0; i < u_waveLayers_length; i++) {\n    if (u_active_colors[i + 1] == 1.) {\n      WaveLayers layer = u_waveLayers[i];\n\n      float noise = smoothstep(\n        layer.noiseFloor,\n        layer.noiseCeil,\n        snoise(vec3(\n          noiseCoord.x * layer.noiseFreq.x + time * layer.noiseFlow,\n          noiseCoord.y * layer.noiseFreq.y,\n          time * layer.noiseSpeed + layer.noiseSeed\n        )) / 2.0 + 0.5\n      );\n\n      v_color = blendNormal(v_color, layer.color, pow(noise, 4.));\n    }\n  }\n\n  //\n  // Finish\n  //\n\n  gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);\n}",
@@ -480,9 +583,6 @@ class Gradient {
     hideGradientLegend() {
         this.isGradientLegendVisible = !1, document.body.classList.remove("isGradientLegendVisible")
     }
-    init() {
-        this.initGradientColors(), this.initMesh(), this.resize(), requestAnimationFrame(this.animate), window.addEventListener("resize", this.resize)
-    }
     /*
     * Waiting for the css variables to become available, usually on page load before we can continue.
     * Using default colors assigned below if no variables have been found after maxCssVarRetries
@@ -491,7 +591,9 @@ class Gradient {
         if (this.computedCanvasStyle && -1 !== this.computedCanvasStyle.getPropertyValue("--gradient-color-1").indexOf("#")) this.init(), this.addIsLoadedClass();
         else {
             if (this.cssVarRetries += 1, this.cssVarRetries > this.maxCssVarRetries) {
-                return this.sectionColors = [16711680, 16711680, 16711935, 65280, 255], void this.init();
+                // return this.sectionColors = [16711680, 16711680, 16711935, 25, 255], void this.init();
+                console.log('sectionColors', this.sectionColors);
+                return this.sectionColors
             }
             requestAnimationFrame(() => this.waitForCssVars())
         }
@@ -499,16 +601,38 @@ class Gradient {
     /*
     * Initializes the four section colors by retrieving them from css variables.
     */
-    initGradientColors() {
-        this.sectionColors = ["--gradient-color-1", "--gradient-color-2", "--gradient-color-3", "--gradient-color-4"].map(cssPropertyName => {
-            let hex = this.computedCanvasStyle.getPropertyValue(cssPropertyName).trim();
-            //Check if shorthand hex value was used and double the length so the conversion in normalizeColor will work.
-            if (4 === hex.length) {
-                const hexTemp = hex.substr(1).split("").map(hexTemp => hexTemp + hexTemp).join("");
-                hex = `#${hexTemp}`
-            }
-            return hex && `0x${hex.substr(1)}`
-        }).filter(Boolean).map(normalizeColor)
+    init() {
+        this.initGradientColors(this.sectionColors)
+        this.initMesh()
+        this.resize()
+        requestAnimationFrame(this.animate)
+        window.addEventListener("resize", this.resize)
+    }
+
+    initGradientColors(startingColors) {
+        console.log("Onoit gradient", startingColors)
+        startingColors = this.sectionColors
+        console.log(startingColors)
+        if (startingColors.length > 1) {
+            this.sectionColors = ["--gradient-color-1", "--gradient-color-2", "--gradient-color-3", "--gradient-color-4"].map(cssPropertyName => {
+                let hex = this.computedCanvasStyle.getPropertyValue(cssPropertyName).trim();
+                //Check if shorthand hex value was used and double the length so the conversion in normalizeColor will work.
+                if (4 === hex.length) {
+                    const hexTemp = hex.substr(1).split("").map(hexTemp => hexTemp + hexTemp).join("");
+                    hex = `#${hexTemp}`
+                }
+                return hex && `0x${hex.substr(1)}`
+            }).filter(Boolean).map(normalizeColor)
+        } else {
+            console.log('startingColors', startingColors);
+            this.sectionColors = startingColors.map(color => {
+                if (color.length === 4) {
+                    const hexTemp = color.substr(1).split("").map(hexTemp => hexTemp + hexTemp).join("");
+                    color = `#${hexTemp}`;
+                }
+                return color && `0x${color.substr(1)}`;
+            }).filter(Boolean).map(normalizeColor);
+        }
     }
 }
 
