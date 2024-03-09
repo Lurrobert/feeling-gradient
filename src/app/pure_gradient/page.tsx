@@ -35,6 +35,7 @@ export default function Home() {
         const canvasElement = document.querySelector("#gradient-canvas") as HTMLCanvasElement;
         if (canvasElement) {
             gradientRef.current.initGradient("#gradient-canvas", ["#FF0000", "#D35400", "#992D22", "#7F8C8D"]);
+            // gradientRef.current.updateSectionColorsSmoothly(["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"])
         }
     }, []);
 
@@ -44,7 +45,7 @@ export default function Home() {
     return (
         <main className="">
             <button onClick={() => gradientRef.current.updateSectionColorsSmoothly(["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"])}>Update</button>
-            <canvas id="gradient-canvas" data-transition-in />
+            <canvas id="gradient-canvas" onLoad={() => gradientRef.current.updateSectionColorsSmoothly(["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"])} />
             <button onClick={() => gradientRef.current.updateSectionColors(["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"])}>Update</button>
         </main>
     )

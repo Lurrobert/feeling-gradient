@@ -456,10 +456,18 @@ class Gradient {
     }
 
     updateSectionColorsSmoothly(newColors) {
-        const duration = 3000; // Duration of the transition in milliseconds
+        const duration = 5000; // Duration of the transition in milliseconds
         const startTime = Date.now();
-        const oldColors = this.sectionColors.map(hexToRgb); // Assuming this.currentColors stores the current hex colors
-        const targetColors = newColors.map(hexToRgb);
+        console.log("section colors", this.sectionColors)
+        const oldColors = this.sectionColors
+        // const targetColors = newColors.map(hexToRgb);
+        const targetColors = [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+            [1, 1, 0]
+        ]
+        console.log(targetColors)
 
         const animate = () => {
             const currentTime = Date.now();
@@ -468,30 +476,27 @@ class Gradient {
 
             const interpolatedColors = oldColors.map((color, index) => {
                 return color.map((channel, channelIndex) => {
-                    return Math.round(lerp(channel, targetColors[index][channelIndex], t));
+                    // Smoothly interpolate between the old and new color values
+                    const startValue = color[channelIndex];
+                    const endValue = targetColors[index][channelIndex];
+                    const value = startValue + (endValue - startValue) * t; // Linear interpolation
+                    return value;
                 });
             });
 
-            // Update the gradient with the interpolated colors
-            this.sectionColors = interpolatedColors.map(rgb => `rgb(${rgb.join(',')})`);
-            const normalizedColors = this.sectionColors.map(hex => {
-                const r = parseInt(hex.slice(1, 3), 16) / 255;
-                const g = parseInt(hex.slice(3, 5), 16) / 255;
-                const b = parseInt(hex.slice(5, 7), 16) / 255;
-                return [r, g, b];
-            });
+            this.sectionColors = interpolatedColors;
 
-            console.log(this.sectionColors)
+            console.log(this.sectionColors);
 
             // Assuming you have a method like this to apply the updated colors
-            this.applyUpdatedColors();
 
-            if (t < 1) {
+            if (t < 1) { // Continue the animation until t reaches 1
+                this.applyUpdatedColors();
                 requestAnimationFrame(animate);
             } else {
-                // Final update to ensure the colors match exactly at the end of the animation
-                this.sectionColors = targetColors.map(rgb => `rgb(${rgb.join(',')})`);
-                this.applyUpdatedColors();
+                // Ensure the colors match exactly at the end of the animation
+                // this.sectionColors = targetColors;
+                // this.applyUpdatedColors();
             }
         };
 
@@ -499,54 +504,17 @@ class Gradient {
     }
 
     applyUpdatedColors() {
-        // Example of updating a uniform array with new colors
-        console.log("uplyign updated colors")
-        console.log(this.material)
-        console.log(this.material.uniforms)
-        console.log(this.material.uniforms.u_waveLayers)
-        const normalizedColors = this.sectionColors.map(hex => {
-            const r = parseInt(hex.slice(1, 3), 16) / 255;
-            const g = parseInt(hex.slice(3, 5), 16) / 255;
-            const b = parseInt(hex.slice(5, 7), 16) / 255;
-            return [r, g, b];
-        });
-
-        this.sectionColors = normalizedColors
 
         if (this.material && this.material.uniforms && this.material.uniforms.u_waveLayers) {
             // Assuming you have a way to update colors directly...
             this.material.uniforms.u_waveLayers.value.forEach((layerUniform, index) => {
                 if (index < this.sectionColors.length) {
-                    console.log("HERe")
-                    // Update the uniform with the new color
-                    // Note: You may need to ensure this aligns with how your shader expects color data
                     layerUniform.value.color.value = this.sectionColors[index];
+                    // this.minigl.render();
                 }
             });
-
-            // Trigger a re-render to reflect the updated colors
-            this.minigl.render();
         }
 
-        // Assuming the shader uses a uniform array for colors, update it here
-        if (this.material && this.material.uniforms && this.material.uniforms.u_waveLayers) {
-            this.material.uniforms.u_waveLayers.value.forEach((layerUniform, index) => {
-                if (index < normalizedColors.length) {
-                    console.log("Updagin")
-                    // Update the uniform with the normalized RGB values
-                    // Note: Ensure that the shader and WebGL setup supports this operation
-                    this.minigl.gl.uniform3fv(layerUniform.location, new Float32Array(normalizedColors[index]));
-                }
-            });
-
-            // Trigger a re-render if necessary
-            if (this.minigl) {
-                console.log('re')
-                this.minigl.render();
-                console.log(this.sectionColors)
-            }
-            this.minigl.render();
-        }
     }
 
 
