@@ -504,17 +504,24 @@ class Gradient {
     }
 
     applyUpdatedColors() {
-
         if (this.material && this.material.uniforms && this.material.uniforms.u_waveLayers) {
-            // Assuming you have a way to update colors directly...
             this.material.uniforms.u_waveLayers.value.forEach((layerUniform, index) => {
                 if (index < this.sectionColors.length) {
-                    layerUniform.value.color.value = this.sectionColors[index];
-                    // this.minigl.render();
+                    // Retrieve the current color from the shader
+                    const currentColor = layerUniform.value.color.value;
+                    // Target color for this frame, interpolated towards the final color
+                    const targetColor = this.sectionColors[index];
+                    // Smoothly interpolate between the current color and the target color
+                    const interpolatedColor = currentColor.map((channel, channelIndex) => {
+                        return channel + (targetColor[channelIndex] - channel) * 0.1; // Adjust the 0.1 factor for speed
+                    });
+                    // Update the shader color with the interpolated color
+                    layerUniform.value.color.value = interpolatedColor;
                 }
             });
+            // Trigger a re-render to reflect the updated colors
+            this.minigl.render();
         }
-
     }
 
 
