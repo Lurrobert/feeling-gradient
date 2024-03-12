@@ -138,18 +138,18 @@ export default function Home() {
 
     useEffect(() => {
         const registerAudio = async () => {
-            const registerCallResponse = await retell.registerCall({
-                agentId: 'a8b62e62e844f5d80c05ba71f9763573',
-                audioWebsocketProtocol: 'web',
-                audioEncoding: 's16le',
-                sampleRate: 24000,
-            });
-            console.log(registerCallResponse); // Assuming you want to log the response for now
-            sdk.startConversation({
-                callId: registerCallResponse.callDetail?.callId ?? '',
-                sampleRate: 24000,
-                // enableUpdate: true
-            })
+            // const registerCallResponse = await retell.registerCall({
+            //     agentId: 'a8b62e62e844f5d80c05ba71f9763573',
+            //     audioWebsocketProtocol: 'web',
+            //     audioEncoding: 's16le',
+            //     sampleRate: 24000,
+            // });
+            // console.log(registerCallResponse); // Assuming you want to log the response for now
+            // sdk.startConversation({
+            //     callId: registerCallResponse.callDetail?.callId ?? '',
+            //     sampleRate: 24000,
+            //     // enableUpdate: true
+            // })
 
             // res.callDetail?.callId
         };
